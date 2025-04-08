@@ -1,9 +1,11 @@
 import express from 'express';
-import bodyParser from 'body-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import morgan from 'morgan';
+import helmet from 'helmet';
 import authRoutes from './routes/authRoutes.js';
-import userInfoRoutes from './routes/userInfoRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import { errorHandler, notFound } from './middleware/errorMiddleware.js';
 
 // Load environment variables
 dotenv.config();
@@ -11,33 +13,49 @@ dotenv.config();
 // Initialize express app
 const app = express();
 
-// Middleware
+// Enhanced middleware
+app.use(helmet()); // Security headers
 app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Routes
+// Logging in development
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
+
+// API routes
 app.use('/api/auth', authRoutes);
-app.use('/api/users', userInfoRoutes);
+app.use('/api/users', userRoutes);
 
-// Basic route for testing
-app.get('/', (req, res) => {
-  res.send('API is running');
+// Health check route
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'API is running' });
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  const statusCode = err.statusCode || 500;
-  res.status(statusCode).json({
-    message: err.message || 'Internal Server Error',
-    stack: process.env.NODE_ENV === 'development' ? err.stack : {}
+// Root route
+app.get('/', (req, res) => {
+  res.status(200).json({ 
+    message: 'Welcome to the API',
+    documentation: '/api-docs' // If you add Swagger/OpenAPI docs later
   });
 });
 
+// Error handling middleware
+app.use(notFound);
+app.use(errorHandler);
+
 // Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+const server = app.listen(PORT, () => {
+  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Promise Rejection:', err);
+  // Close server & exit process
+  server.close(() => process.exit(1));
 });
 
 export default app;
