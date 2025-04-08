@@ -1,8 +1,12 @@
+import express from 'express';
+import bodyParser from 'body-parser';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import authRoutes from './routes/authRoutes.js';
+import userInfoRoutes from './routes/userInfoRoutes.js';
 
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-require('dotenv').config();
+// Load environment variables
+dotenv.config();
 
 // Initialize express app
 const app = express();
@@ -13,10 +17,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Routes
-const authRoutes = require('./routes/authRoutes');
-
-// Use routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userInfoRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {
@@ -38,4 +40,4 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-module.exports = app;
+export default app;
