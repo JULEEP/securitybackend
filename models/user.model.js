@@ -36,4 +36,4 @@ const findUserByEmail = async (email) => {
   return result.rows;  // Return the result (users list)
 };
 
-export { createUser, findUserByEmail, findAllUsers };
+export { createUser, findUserByEmail, findAllUsers, createUserTable };

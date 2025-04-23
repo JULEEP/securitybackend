@@ -5,6 +5,7 @@ const createProjectTable = async () => {
         CREATE TABLE IF NOT EXISTS projects (
             id SERIAL PRIMARY KEY,
             user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            assigned_to INTEGER REFERENCES users(id),
             title VARCHAR(255) NOT NULL,
             description TEXT,
             project_url VARCHAR(255),
@@ -12,8 +13,8 @@ const createProjectTable = async () => {
             technologies TEXT[],
             image_url VARCHAR(255),
             start_date DATE,
-            end_date DATE,
-            is_ongoing BOOLEAN DEFAULT false,
+            deadline DATE,
+            status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed')),
             visibility VARCHAR(50) DEFAULT 'public',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -35,6 +36,7 @@ createProjectTable();
 const createProject = async (projectData) => {
   const {
     user_id,
+    assigned_to,
     title,
     description,
     project_url,
@@ -42,22 +44,23 @@ const createProject = async (projectData) => {
     technologies,
     image_url,
     start_date,
-    end_date,
-    is_ongoing,
+    deadline,
+    status,
     visibility,
   } = projectData;
 
   const query = `
         INSERT INTO projects (
-            user_id, title, description, project_url, github_url,
-            technologies, image_url, start_date, end_date, is_ongoing, visibility
+            user_id, assigned_to, title, description, project_url, github_url,
+            technologies, image_url, start_date, deadline, status, visibility
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
     `;
 
   const result = await pool.query(query, [
     user_id,
+    assigned_to,
     title,
     description,
     project_url,
@@ -65,8 +68,8 @@ const createProject = async (projectData) => {
     technologies,
     image_url,
     start_date,
-    end_date,
-    is_ongoing,
+    deadline,
+    status || 'pending', // Default to 'pending' if no status provided
     visibility,
   ]);
 
@@ -95,52 +98,96 @@ const getProjectsByUserId = async (userId) => {
   return result.rows;
 };
 
-// Update project
+// Update project function
 const updateProject = async (projectId, projectData) => {
-  const {
-    title,
-    description,
-    project_url,
-    github_url,
-    technologies,
-    image_url,
-    start_date,
-    end_date,
-    is_ongoing,
-    visibility,
-  } = projectData;
+  // First get the existing project data
+  const existingProject = await getProjectById(projectId);
+  if (!existingProject) {
+    return null;
+  }
 
+  // Create an array to store the fields to update and their values
+  const updates = [];
+  const values = [];
+  let paramCount = 1;
+
+  // Check each field and only include it if it's provided in projectData
+  if ('title' in projectData) {
+    updates.push(`title = $${paramCount}`);
+    values.push(projectData.title);
+    paramCount++;
+  }
+  if ('assigned_to' in projectData) {
+    updates.push(`assigned_to = $${paramCount}`);
+    values.push(projectData.assigned_to);
+    paramCount++;
+  }
+  if ('description' in projectData) {
+    updates.push(`description = $${paramCount}`);
+    values.push(projectData.description);
+    paramCount++;
+  }
+  if ('project_url' in projectData) {
+    updates.push(`project_url = $${paramCount}`);
+    values.push(projectData.project_url);
+    paramCount++;
+  }
+  if ('github_url' in projectData) {
+    updates.push(`github_url = $${paramCount}`);
+    values.push(projectData.github_url);
+    paramCount++;
+  }
+  if ('technologies' in projectData) {
+    updates.push(`technologies = $${paramCount}`);
+    values.push(projectData.technologies);
+    paramCount++;
+  }
+  if ('image_url' in projectData) {
+    updates.push(`image_url = $${paramCount}`);
+    values.push(projectData.image_url);
+    paramCount++;
+  }
+  if ('start_date' in projectData) {
+    updates.push(`start_date = $${paramCount}`);
+    values.push(projectData.start_date);
+    paramCount++;
+  }
+  if ('deadline' in projectData) {
+    updates.push(`deadline = $${paramCount}`);
+    values.push(projectData.deadline);
+    paramCount++;
+  }
+  if ('status' in projectData) {
+    updates.push(`status = $${paramCount}`);
+    values.push(projectData.status);
+    paramCount++;
+  }
+  if ('visibility' in projectData) {
+    updates.push(`visibility = $${paramCount}`);
+    values.push(projectData.visibility);
+    paramCount++;
+  }
+
+  // Always update the updated_at timestamp
+  updates.push(`updated_at = CURRENT_TIMESTAMP`);
+
+  // If no fields to update, return existing project
+  if (updates.length === 1) { // Only updated_at
+    return existingProject;
+  }
+
+  // Construct and execute the update query
   const query = `
-        UPDATE projects
-        SET title = $1,
-            description = $2,
-            project_url = $3,
-            github_url = $4,
-            technologies = $5,
-            image_url = $6,
-            start_date = $7,
-            end_date = $8,
-            is_ongoing = $9,
-            visibility = $10,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE id = $11
-        RETURNING *
-    `;
+    UPDATE projects 
+    SET ${updates.join(', ')}
+    WHERE id = $${paramCount}
+    RETURNING *
+  `;
 
-  const result = await pool.query(query, [
-    title,
-    description,
-    project_url,
-    github_url,
-    technologies,
-    image_url,
-    start_date,
-    end_date,
-    is_ongoing,
-    visibility,
-    projectId,
-  ]);
+  // Add projectId as the last parameter
+  values.push(projectId);
 
+  const result = await pool.query(query, values);
   return result.rows[0];
 };
 
@@ -152,6 +199,7 @@ const deleteProject = async (projectId) => {
 };
 
 export {
+  createProjectTable,
   createProject,
   getAllProjects,
   getProjectById,

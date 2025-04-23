@@ -2,6 +2,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import userRoutes from "./routes/user.routes.js";
+import projectRoutes from "./routes/project.routes.js";
 
 
 dotenv.config();
@@ -12,8 +13,9 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-
-app.use("/api/freeliencers", userRoutes);
+// Routes
+app.use("/api/freelancers", userRoutes);
+app.use("/api/projects", projectRoutes);
 
 
 
