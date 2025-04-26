@@ -29,10 +29,4 @@ router.post("/add-skills/:userId", addSkills);
 router.post("/add-awards/:userId", addAwards);
 
 
-
-
-
-
-
-
 export default router;

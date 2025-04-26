@@ -22,7 +22,7 @@ const createProjectTable = async () => {
     `;
   try {
     await pool.query(query);
-    console.log("Projects table created successfully");
+    // console.log("Projects table created successfully");
   } catch (err) {
     console.error("Error creating projects table:", err);
     throw err;
