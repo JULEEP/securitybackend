@@ -3,6 +3,7 @@ import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import userRoutes from "./routes/user.routes.js";
 import projectRoutes from "./routes/project.routes.js";
+import invoiceRouters from "./routes/invoice.routes.js";
 import proposalRoutes from "./routes/proposal.routes.js";
 
 
@@ -17,6 +18,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // Routes
 app.use("/api/freelancers", userRoutes); //fixed spelling error freeliancers to freelancers
 app.use("/api/projects", projectRoutes);
+app.use("/api/invoices",invoiceRouters)
 app.use("/api/proposals", proposalRoutes);
 
 
