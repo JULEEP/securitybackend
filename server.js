@@ -18,7 +18,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // Routes
 app.use("/api/freelancers", userRoutes); //fixed spelling error freeliancers to freelancers
 app.use("/api/projects", projectRoutes);
-app.use("/api/invoices",invoiceRouters)
+app.use("/api/invoices",invoiceRouters);
 app.use("/api/proposals", proposalRoutes);
 
 

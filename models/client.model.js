@@ -1,34 +1,27 @@
 import { DataTypes } from 'sequelize';
-import sequelize from '../config/db.js';
+import { sequelize } from '../config/db.js'; // Adjust this if your sequelize instance is elsewhere
 
-module.exports = (sequelize, DataTypes) => {
-    const Client = sequelize.define('Client', {
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true,
-      },
-      name: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      email: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true,
-      },
-      phone: {
-        type: DataTypes.STRING,
-      },
-      address: {
-        type: DataTypes.STRING,
-      }
-    });
-  
-    Client.associate = (models) => {
-      Client.hasMany(models.Invoice, { foreignKey: 'clientId' });
-    };
-  
-    return Client;
-  };
-  
+const Client = sequelize.define('Client', {
+  name: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  company: {
+    type: DataTypes.STRING,
+  },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+  },
+  status: {
+    type: DataTypes.STRING,
+    defaultValue: 'Active',
+  },
+  projects: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
+});
+
+export default Client
